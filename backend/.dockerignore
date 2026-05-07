@@ -1,0 +1,8 @@
+**/target/
+**/.DS_Store
+.env
+.env.*
+.git/
+.gitignore
+node_modules/
+dist/

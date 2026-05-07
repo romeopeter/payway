@@ -1,0 +1,24 @@
+# Rust
+/target
+backend/target
+**/*.rs.bk
+
+# Local env (never commit)
+.env
+.env.local
+.env.*.local
+requirements.md
+
+# Frontend (added in Part 3)
+node_modules/
+dist/
+.vite/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/settings.json
+*.swp
+*.swo
+.claude/

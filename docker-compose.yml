@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: payway-postgres
+    environment:
+      POSTGRES_DB: payway
+      POSTGRES_USER: payway
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-payway_local_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payway -d payway"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: payway-backend
+    environment:
+      DATABASE_URL: postgres://payway:${POSTGRES_PASSWORD:-payway_local_dev}@postgres:5432/payway
+      PORT: 8080
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      RUST_LOG: ${RUST_LOG:-payway_backend=debug,tower_http=info,sqlx=warn}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

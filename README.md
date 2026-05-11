@@ -52,18 +52,27 @@ payway/
 ├── backend/                     Rust + Axum service
 │   ├── Cargo.toml
 │   ├── Dockerfile
-│   └── src/
-│       ├── main.rs              entry: tracing, config, pool, migrate, serve
-│       ├── config.rs            env-var loader
-│       ├── db.rs                Postgres pool setup
-│       ├── error.rs             AppError + IntoResponse
-│       ├── state.rs             AppState passed to handlers
-│       ├── routes.rs            router assembly
-│       ├── routes/
-│       │   └── health.rs        GET /health
-│       ├── middleware.rs
-│       └── middleware/
-│           └── request_id.rs    x-request-id stamping/propagation
+│   ├── src/
+│   │   ├── lib.rs               library entry: declares pub modules
+│   │   ├── main.rs              binary entry: tracing, config, pool, migrate, serve
+│   │   ├── config.rs            env-var loader
+│   │   ├── db.rs                Postgres pool setup
+│   │   ├── error.rs             AppError + IntoResponse
+│   │   ├── state.rs             AppState passed to handlers
+│   │   ├── fx.rs                simulated FX rate provider
+│   │   ├── idempotency.rs       INSERT...ON CONFLICT helper + replay
+│   │   ├── domain.rs
+│   │   ├── domain/
+│   │   │   └── payments.rs      create_payment service + types
+│   │   ├── routes.rs            router assembly
+│   │   ├── routes/
+│   │   │   ├── health.rs        GET /health
+│   │   │   └── payments.rs      POST /payments handler
+│   │   ├── middleware.rs
+│   │   └── middleware/
+│   │       └── request_id.rs    x-request-id stamping/propagation
+│   └── tests/
+│       └── payments_create.rs   integration tests via #[sqlx::test]
 ├── frontend/                    React app (Part 3)
 ├── migrations/                  PostgreSQL migrations (sqlx)
 │   ├── 0001_initial_schema.sql
@@ -71,8 +80,11 @@ payway/
 ├── learn/                       Written analysis — read these
 │   ├── schema-design.md
 │   ├── rust-project-layout.md
+│   ├── payments-create.md
 │   └── concepts/
-│       └── error-handling.md
+│       ├── error-handling.md
+│       ├── idempotency.md
+│       └── double-spend.md
 ├── docker-compose.yml
 ├── .env.example
 └── requirement.md               original spec
@@ -82,7 +94,10 @@ payway/
 
 - [`learn/schema-design.md`](./learn/schema-design.md) — Part 1: schema rationale, balance integrity, currency operations
 - [`learn/rust-project-layout.md`](./learn/rust-project-layout.md) — Part 2a: how the Rust code is organized, what each dependency does
+- [`learn/payments-create.md`](./learn/payments-create.md) — Part 2b: walkthrough of `POST /payments`, in-transaction vs. outbox pattern
 - [`learn/concepts/error-handling.md`](./learn/concepts/error-handling.md) — Rust error handling for someone coming from JS/Python
+- [`learn/concepts/idempotency.md`](./learn/concepts/idempotency.md) — why request_hash, why DB-only, common antipatterns
+- [`learn/concepts/double-spend.md`](./learn/concepts/double-spend.md) — `SELECT FOR UPDATE`, isolation levels, the prepared answer to Part 4B.1
 - More added as we ship each part of the spec.
 
 ## Assumptions

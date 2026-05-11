@@ -1,17 +1,12 @@
 use anyhow::Context;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
-mod config;
-mod db;
-mod error;
-mod middleware;
-mod routes;
-mod state;
-
-use crate::config::Config;
-use crate::state::AppState;
+use payway_backend::{
+    config::Config, db, fx::SimulatedFxProvider, middleware, routes, state::AppState,
+};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -33,7 +28,10 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("running database migrations")?;
 
-    let state = AppState { pool };
+    let state = AppState {
+        pool,
+        fx: Arc::new(SimulatedFxProvider::new()),
+    };
 
     let app = routes::router(state).layer(TraceLayer::new_for_http());
     let app = middleware::request_id::wrap(app);

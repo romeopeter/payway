@@ -44,6 +44,14 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # .env loading (no-op when real env vars are set)
 dotenvy = "0.15"
 
+# Hashing (request_hash for idempotency, HMAC for webhooks in 2c)
+sha2 = "0.10"
+hex  = "0.4"
+
+[dev-dependencies]
+# Decimal literal macro — `dec!(0.000625)` instead of `Decimal::from_str("...")`
+rust_decimal_macros = "1"
+
 [profile.release]
 lto           = "thin"
 codegen-units = 1

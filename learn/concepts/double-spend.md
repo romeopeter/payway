@@ -138,4 +138,4 @@ No overdraft, no money created. The mechanism is the per-account row lock. We'll
 - [`backend/src/domain/payments.rs`](../../backend/src/domain/payments.rs) — `fetch_sender_for_update` is where the lock is acquired
 - [`learn/payments-create.md`](../payments-create.md) §5 — where this fits in the create_payment flow
 - [`learn/schema-design.md`](../schema-design.md) §4.3 — the original mention of the pattern from Part 1
-- [`requirement.md`](../../requirement.md) Part 4B.1 — the failure scenario this answers
+- [`requirements.md`](../../requirements.md) Part 4B.1 — the failure scenario this answers

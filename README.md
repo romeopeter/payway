@@ -61,18 +61,22 @@ payway/
 │   │   ├── state.rs             AppState passed to handlers
 │   │   ├── fx.rs                simulated FX rate provider
 │   │   ├── idempotency.rs       INSERT...ON CONFLICT helper + replay
+│   │   ├── webhook_signature.rs HMAC-SHA256 verifier with unit tests
 │   │   ├── domain.rs
 │   │   ├── domain/
-│   │   │   └── payments.rs      create_payment service + types
+│   │   │   ├── payments.rs      create_payment service + types
+│   │   │   └── webhooks.rs      webhook processor (signature, dedup, state)
 │   │   ├── routes.rs            router assembly
 │   │   ├── routes/
 │   │   │   ├── health.rs        GET /health
-│   │   │   └── payments.rs      POST /payments handler
+│   │   │   ├── payments.rs      POST /payments handler
+│   │   │   └── webhooks.rs      POST /webhooks/provider handler
 │   │   ├── middleware.rs
 │   │   └── middleware/
 │   │       └── request_id.rs    x-request-id stamping/propagation
 │   └── tests/
-│       └── payments_create.rs   integration tests via #[sqlx::test]
+│       ├── payments_create.rs   POST /payments integration tests
+│       └── webhooks_provider.rs POST /webhooks/provider integration tests
 ├── frontend/                    React app (Part 3)
 ├── migrations/                  PostgreSQL migrations (sqlx)
 │   ├── 0001_initial_schema.sql
@@ -81,10 +85,13 @@ payway/
 │   ├── schema-design.md
 │   ├── rust-project-layout.md
 │   ├── payments-create.md
+│   ├── webhooks.md
+│   ├── code-review-junior-webhook.md
 │   └── concepts/
 │       ├── error-handling.md
 │       ├── idempotency.md
-│       └── double-spend.md
+│       ├── double-spend.md
+│       └── webhook-security.md
 ├── docker-compose.yml
 ├── .env.example
 └── requirement.md               original spec
@@ -95,9 +102,12 @@ payway/
 - [`learn/schema-design.md`](./learn/schema-design.md) — Part 1: schema rationale, balance integrity, currency operations
 - [`learn/rust-project-layout.md`](./learn/rust-project-layout.md) — Part 2a: how the Rust code is organized, what each dependency does
 - [`learn/payments-create.md`](./learn/payments-create.md) — Part 2b: walkthrough of `POST /payments`, in-transaction vs. outbox pattern
+- [`learn/webhooks.md`](./learn/webhooks.md) — Part 2c: walkthrough of `POST /webhooks/provider`, completion vs. reversal ledger entries
+- [`learn/code-review-junior-webhook.md`](./learn/code-review-junior-webhook.md) — Part 4A: critique of the junior dev's broken handler
 - [`learn/concepts/error-handling.md`](./learn/concepts/error-handling.md) — Rust error handling for someone coming from JS/Python
 - [`learn/concepts/idempotency.md`](./learn/concepts/idempotency.md) — why request_hash, why DB-only, common antipatterns
 - [`learn/concepts/double-spend.md`](./learn/concepts/double-spend.md) — `SELECT FOR UPDATE`, isolation levels, the prepared answer to Part 4B.1
+- [`learn/concepts/webhook-security.md`](./learn/concepts/webhook-security.md) — HMAC, raw bytes vs. parsed JSON, constant-time compare, always-200
 - More added as we ship each part of the spec.
 
 ## Assumptions

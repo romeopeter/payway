@@ -31,6 +31,7 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState {
         pool,
         fx: Arc::new(SimulatedFxProvider::new()),
+        webhook_secret: Arc::new(config.webhook_secret),
     };
 
     let app = routes::router(state).layer(TraceLayer::new_for_http());

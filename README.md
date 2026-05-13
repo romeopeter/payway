@@ -89,6 +89,8 @@ payway/
 │   ├── webhooks.md
 │   ├── payments-read.md
 │   ├── code-review-junior-webhook.md
+│   ├── failure-scenarios.md
+│   ├── production-readiness.md
 │   └── concepts/
 │       ├── error-handling.md
 │       ├── idempotency.md
@@ -107,6 +109,8 @@ payway/
 - [`learn/webhooks.md`](./learn/webhooks.md) — Part 2c: walkthrough of `POST /webhooks/provider`, completion vs. reversal ledger entries
 - [`learn/payments-read.md`](./learn/payments-read.md) — Part 2d: walkthrough of `GET /payments/:id` and `GET /payments`, pagination + filter patterns
 - [`learn/code-review-junior-webhook.md`](./learn/code-review-junior-webhook.md) — Part 4A: critique of the junior dev's broken handler
+- [`learn/failure-scenarios.md`](./learn/failure-scenarios.md) — Part 4B: how the system handles double-spend, late webhook, stale FX, partial settlement, provider timeout
+- [`learn/production-readiness.md`](./learn/production-readiness.md) — Part 4C: top 5 changes before deploying with real money
 - [`learn/concepts/error-handling.md`](./learn/concepts/error-handling.md) — Rust error handling for someone coming from JS/Python
 - [`learn/concepts/idempotency.md`](./learn/concepts/idempotency.md) — why request_hash, why DB-only, common antipatterns
 - [`learn/concepts/double-spend.md`](./learn/concepts/double-spend.md) — `SELECT FOR UPDATE`, isolation levels, the prepared answer to Part 4B.1

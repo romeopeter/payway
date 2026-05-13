@@ -1,32 +1,37 @@
 use axum::{
-    extract::State,
+    extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
-    routing::post,
+    routing::{get, post},
     Json, Router,
 };
+use uuid::Uuid;
 
-use crate::domain::payments::{create_payment, CreatePaymentRequest, CreatePaymentResponse};
+use crate::domain::payments::{
+    create_payment, get_payment_detail, list_payments, CreatePaymentRequest, CreatePaymentResponse,
+    ListPaymentsQuery, ListPaymentsResponse, PaymentDetail,
+};
 use crate::error::AppError;
 use crate::state::AppState;
 
 const IDEMPOTENCY_HEADER: &str = "idempotency-key";
 
 pub fn routes() -> Router<AppState> {
-    Router::new().route("/payments", post(create))
+    Router::new()
+        .route("/payments", post(create).get(list))
+        .route("/payments/:id", get(detail))
 }
 
-// Thin handler: pulls headers + body, delegates to the domain service,
-// renders the result as 202 Accepted. All business logic lives in
-// `crate::domain::payments::create_payment`.
+// ---------------------------------------------------------------------------
+// POST /payments
+// ---------------------------------------------------------------------------
+
 async fn create(
     State(state): State<AppState>,
     headers: HeaderMap,
     Json(body): Json<CreatePaymentRequest>,
 ) -> Result<(StatusCode, Json<CreatePaymentResponse>), AppError> {
     let idempotency_key = require_idempotency_key(&headers)?;
-
     let response = create_payment(&state.pool, &state.fx, &idempotency_key, body).await?;
-
     Ok((StatusCode::ACCEPTED, Json(response)))
 }
 
@@ -45,4 +50,28 @@ fn require_idempotency_key(headers: &HeaderMap) -> Result<String, AppError> {
     }
 
     Ok(raw.to_string())
+}
+
+// ---------------------------------------------------------------------------
+// GET /payments/:id
+// ---------------------------------------------------------------------------
+
+async fn detail(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<PaymentDetail>, AppError> {
+    let payment = get_payment_detail(&state.pool, id).await?;
+    Ok(Json(payment))
+}
+
+// ---------------------------------------------------------------------------
+// GET /payments
+// ---------------------------------------------------------------------------
+
+async fn list(
+    State(state): State<AppState>,
+    Query(params): Query<ListPaymentsQuery>,
+) -> Result<Json<ListPaymentsResponse>, AppError> {
+    let response = list_payments(&state.pool, params).await?;
+    Ok(Json(response))
 }

@@ -429,3 +429,271 @@ async fn insert_ledger_pair(
     .await?;
     Ok(())
 }
+
+// ===========================================================================
+// Read API
+// ===========================================================================
+
+#[derive(Debug, Serialize)]
+pub struct PaymentDetail {
+    pub id: Uuid,
+    pub reference: String,
+    pub status: String,
+    pub sender_account_id: Uuid,
+    pub sender_name: Option<String>,
+    pub recipient_id: Uuid,
+    pub recipient_name: String,
+    pub recipient_country: String,
+    pub source_currency: String,
+    pub source_amount: Decimal,
+    pub destination_currency: String,
+    pub destination_amount: Decimal,
+    pub fx_rate: Decimal,
+    pub provider_name: Option<String>,
+    pub provider_reference: Option<String>,
+    pub initiated_at: DateTime<Utc>,
+    pub submitted_at: Option<DateTime<Utc>>,
+    pub completed_at: Option<DateTime<Utc>>,
+    pub failed_at: Option<DateTime<Utc>>,
+    pub failure_reason: Option<String>,
+    pub ledger_entries: Vec<LedgerEntryView>,
+    pub status_history: Vec<StatusHistoryView>,
+}
+
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct LedgerEntryView {
+    pub id: i64,
+    pub account_id: Uuid,
+    pub account_type: String,
+    pub amount: Decimal,
+    pub currency: String,
+    pub entry_type: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct StatusHistoryView {
+    pub from_status: Option<String>,
+    pub to_status: String,
+    pub changed_at: DateTime<Utc>,
+    pub reason: Option<String>,
+}
+
+#[derive(sqlx::FromRow)]
+struct PaymentDetailRow {
+    id: Uuid,
+    reference: String,
+    status: String,
+    sender_account_id: Uuid,
+    sender_name: Option<String>,
+    recipient_id: Uuid,
+    recipient_name: String,
+    recipient_country: String,
+    source_currency: String,
+    source_amount: Decimal,
+    destination_currency: String,
+    destination_amount: Decimal,
+    fx_rate: Decimal,
+    provider_name: Option<String>,
+    provider_reference: Option<String>,
+    initiated_at: DateTime<Utc>,
+    submitted_at: Option<DateTime<Utc>>,
+    completed_at: Option<DateTime<Utc>>,
+    failed_at: Option<DateTime<Utc>>,
+    failure_reason: Option<String>,
+}
+
+pub async fn get_payment_detail(pool: &PgPool, id: Uuid) -> Result<PaymentDetail, AppError> {
+    // Three reads — one for the transaction + linked names + FX rate, then
+    // two for the embedded collections. We could fold these into one query
+    // with array_agg of jsonb, but the readability cost isn't worth the
+    // single-roundtrip win at our scale.
+    let row: Option<PaymentDetailRow> = sqlx::query_as(
+        "SELECT
+            t.id,
+            t.reference,
+            t.status::text                AS status,
+            t.sender_account_id,
+            sb.name                       AS sender_name,
+            t.recipient_id,
+            r.name                        AS recipient_name,
+            r.country_code                AS recipient_country,
+            t.source_currency,
+            t.source_amount,
+            t.destination_currency,
+            t.destination_amount,
+            q.rate                        AS fx_rate,
+            t.provider_name,
+            t.provider_reference,
+            t.initiated_at,
+            t.submitted_at,
+            t.completed_at,
+            t.failed_at,
+            t.failure_reason
+         FROM transactions t
+         JOIN fx_quotes q       ON q.id  = t.fx_quote_id
+         JOIN accounts sa       ON sa.id = t.sender_account_id
+         LEFT JOIN business_entities sb ON sb.id = sa.owner_business_id
+         JOIN recipients r      ON r.id  = t.recipient_id
+         WHERE t.id = $1",
+    )
+    .bind(id)
+    .fetch_optional(pool)
+    .await?;
+
+    let Some(row) = row else {
+        return Err(AppError::NotFound);
+    };
+
+    let ledger_entries: Vec<LedgerEntryView> = sqlx::query_as(
+        "SELECT le.id,
+                le.account_id,
+                a.account_type::text  AS account_type,
+                le.amount,
+                le.currency,
+                le.entry_type,
+                le.created_at
+         FROM ledger_entries le
+         JOIN accounts a ON a.id = le.account_id
+         WHERE le.transaction_id = $1
+         ORDER BY le.id",
+    )
+    .bind(id)
+    .fetch_all(pool)
+    .await?;
+
+    let status_history: Vec<StatusHistoryView> = sqlx::query_as(
+        "SELECT from_status::text  AS from_status,
+                to_status::text    AS to_status,
+                changed_at,
+                reason
+         FROM transaction_status_history
+         WHERE transaction_id = $1
+         ORDER BY changed_at, id",
+    )
+    .bind(id)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(PaymentDetail {
+        id: row.id,
+        reference: row.reference,
+        status: row.status,
+        sender_account_id: row.sender_account_id,
+        sender_name: row.sender_name,
+        recipient_id: row.recipient_id,
+        recipient_name: row.recipient_name,
+        recipient_country: row.recipient_country,
+        source_currency: row.source_currency,
+        source_amount: row.source_amount,
+        destination_currency: row.destination_currency,
+        destination_amount: row.destination_amount,
+        fx_rate: row.fx_rate,
+        provider_name: row.provider_name,
+        provider_reference: row.provider_reference,
+        initiated_at: row.initiated_at,
+        submitted_at: row.submitted_at,
+        completed_at: row.completed_at,
+        failed_at: row.failed_at,
+        failure_reason: row.failure_reason,
+        ledger_entries,
+        status_history,
+    })
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ListPaymentsQuery {
+    pub status: Option<String>,
+    pub from_date: Option<DateTime<Utc>>,
+    pub to_date: Option<DateTime<Utc>>,
+    pub limit: Option<u32>,
+    pub offset: Option<u32>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ListPaymentsResponse {
+    pub items: Vec<PaymentListItem>,
+    pub total: i64,
+    pub limit: u32,
+    pub offset: u32,
+}
+
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct PaymentListItem {
+    pub id: Uuid,
+    pub reference: String,
+    pub status: String,
+    pub source_currency: String,
+    pub source_amount: Decimal,
+    pub destination_currency: String,
+    pub destination_amount: Decimal,
+    pub fx_rate: Decimal,
+    pub initiated_at: DateTime<Utc>,
+    pub sender_name: Option<String>,
+    pub recipient_name: String,
+    pub recipient_country: String,
+}
+
+pub async fn list_payments(
+    pool: &PgPool,
+    query: ListPaymentsQuery,
+) -> Result<ListPaymentsResponse, AppError> {
+    let limit = query.limit.unwrap_or(20).clamp(1, 100);
+    let offset = query.offset.unwrap_or(0);
+
+    // Optional filters via the (NULL OR match) pattern. Postgres short-circuits
+    // when the parameter is NULL, so the filter doesn't restrict — equivalent
+    // to "no filter applied". One SQL statement instead of dynamic SQL.
+    let items: Vec<PaymentListItem> = sqlx::query_as(
+        "SELECT
+            t.id,
+            t.reference,
+            t.status::text       AS status,
+            t.source_currency,
+            t.source_amount,
+            t.destination_currency,
+            t.destination_amount,
+            q.rate               AS fx_rate,
+            t.initiated_at,
+            sb.name              AS sender_name,
+            r.name               AS recipient_name,
+            r.country_code       AS recipient_country
+         FROM transactions t
+         JOIN fx_quotes q       ON q.id  = t.fx_quote_id
+         JOIN accounts sa       ON sa.id = t.sender_account_id
+         LEFT JOIN business_entities sb ON sb.id = sa.owner_business_id
+         JOIN recipients r      ON r.id  = t.recipient_id
+         WHERE ($1::transaction_status IS NULL OR t.status = $1::transaction_status)
+           AND ($2::timestamptz       IS NULL OR t.initiated_at >= $2)
+           AND ($3::timestamptz       IS NULL OR t.initiated_at <  $3)
+         ORDER BY t.initiated_at DESC, t.id DESC
+         LIMIT $4 OFFSET $5",
+    )
+    .bind(query.status.as_deref())
+    .bind(query.from_date)
+    .bind(query.to_date)
+    .bind(limit as i64)
+    .bind(offset as i64)
+    .fetch_all(pool)
+    .await?;
+
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*)
+         FROM transactions t
+         WHERE ($1::transaction_status IS NULL OR t.status = $1::transaction_status)
+           AND ($2::timestamptz       IS NULL OR t.initiated_at >= $2)
+           AND ($3::timestamptz       IS NULL OR t.initiated_at <  $3)",
+    )
+    .bind(query.status.as_deref())
+    .bind(query.from_date)
+    .bind(query.to_date)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(ListPaymentsResponse {
+        items,
+        total,
+        limit,
+        offset,
+    })
+}

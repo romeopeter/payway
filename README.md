@@ -76,7 +76,8 @@ payway/
 │   │       └── request_id.rs    x-request-id stamping/propagation
 │   └── tests/
 │       ├── payments_create.rs   POST /payments integration tests
-│       └── webhooks_provider.rs POST /webhooks/provider integration tests
+│       ├── webhooks_provider.rs POST /webhooks/provider integration tests
+│       └── payments_read.rs     GET /payments integration tests
 ├── frontend/                    React app (Part 3)
 ├── migrations/                  PostgreSQL migrations (sqlx)
 │   ├── 0001_initial_schema.sql
@@ -86,6 +87,7 @@ payway/
 │   ├── rust-project-layout.md
 │   ├── payments-create.md
 │   ├── webhooks.md
+│   ├── payments-read.md
 │   ├── code-review-junior-webhook.md
 │   └── concepts/
 │       ├── error-handling.md
@@ -103,6 +105,7 @@ payway/
 - [`learn/rust-project-layout.md`](./learn/rust-project-layout.md) — Part 2a: how the Rust code is organized, what each dependency does
 - [`learn/payments-create.md`](./learn/payments-create.md) — Part 2b: walkthrough of `POST /payments`, in-transaction vs. outbox pattern
 - [`learn/webhooks.md`](./learn/webhooks.md) — Part 2c: walkthrough of `POST /webhooks/provider`, completion vs. reversal ledger entries
+- [`learn/payments-read.md`](./learn/payments-read.md) — Part 2d: walkthrough of `GET /payments/:id` and `GET /payments`, pagination + filter patterns
 - [`learn/code-review-junior-webhook.md`](./learn/code-review-junior-webhook.md) — Part 4A: critique of the junior dev's broken handler
 - [`learn/concepts/error-handling.md`](./learn/concepts/error-handling.md) — Rust error handling for someone coming from JS/Python
 - [`learn/concepts/idempotency.md`](./learn/concepts/idempotency.md) — why request_hash, why DB-only, common antipatterns

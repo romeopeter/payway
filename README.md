@@ -98,7 +98,7 @@ payway/
 │       └── webhook-security.md
 ├── docker-compose.yml
 ├── .env.example
-└── requirement.md               original spec
+└── requirements.md               original spec
 ```
 
 ## Where the design lives
@@ -127,4 +127,4 @@ payway/
 
 ## Spec
 
-Original requirements are in [`requirement.md`](./requirement.md). If anything in this README contradicts the spec, the README is wrong.
+Original requirements are in [`requirements.md`](./requirements.md). If anything in this README contradicts the spec, the README is wrong.

@@ -225,4 +225,4 @@ None of these are problems for a prototype, but knowing where the limits are is 
 
 - SQL: [migrations/0001_initial_schema.sql](../migrations/0001_initial_schema.sql) (schema), [migrations/0002_seed.sql](../migrations/0002_seed.sql) (seed)
 - The teaching contract and non-negotiables: [.claude/skills/payway-guide/SKILL.md](../.claude/skills/payway-guide/SKILL.md)
-- Spec: [requirement.md](../requirement.md)
+- Spec: [requirements.md](../requirements.md)

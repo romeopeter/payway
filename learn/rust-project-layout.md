@@ -173,5 +173,5 @@ First Docker build is slow (downloads + compiles all deps). Subsequent builds wi
 ## What to read next
 
 - [`learn/concepts/error-handling.md`](./concepts/error-handling.md) — the `Result`/`?`/`thiserror`/`IntoResponse` pattern in depth. Read before 2b.
-- Then back to [`requirement.md`](../requirement.md) §Part 2 to refresh on `POST /payments`.
+- Then back to [`requirements.md`](../requirements.md) §Part 2 to refresh on `POST /payments`.
 - Then 2b lands.

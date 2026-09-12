@@ -1,6 +1,6 @@
 # Webhook Security
 
-> **What this is for:** the security primitives behind [`backend/src/webhook_signature.rs`](../../backend/src/webhook_signature.rs) and the surrounding handler. After this you should be able to explain (a) why HMAC over raw bytes, not parsed JSON, (b) why constant-time compare matters, (c) the "always 200" rule and the side channels it closes, (d) what replay attacks look like and why our dedup mitigates them.
+> **What this is for:** the security primitives behind [`backend/src/webhook_signature.rs`](../../backend/src/webhook_signature.rs) and the surrounding handler. After this you should be able to explain <br/>(a) why HMAC over raw bytes, not parsed JSON, <br/> (b) why constant-time compare matters, <br />(c) the "always 200" rule and the side channels it closes, <br/> (d) what replay attacks look like and why our dedup mitigates them.
 
 ---
 
